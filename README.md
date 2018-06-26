@@ -15,5 +15,5 @@ Make this folder structure in the same folder as the python scripts.
 
           ->Output
 
-                 ->put all the binary masks (jtf%0d_bin.tif) here
+                 ->put all the binary masks (jtf%0d_bin.tiff) here
  
