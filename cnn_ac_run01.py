@@ -2,7 +2,7 @@ from skimage.io import imread
 from skimage.transform import resize as imresize
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+import matplotlib.pyplot as plt
 
 from keras.models import Model
 from keras.layers import Conv2D,GaussianNoise,SpatialDropout2D,LeakyReLU
@@ -136,6 +136,23 @@ def return_train_test_files(input_path,output_path,size_y,size_x):
 
     return np.array(list_input_images), np.array(list_output_images)
 
+def create_plots(X, Y, n=10, filename='plot.png'):
+
+    fig, axes = plt.subplots(n,2,figsize=(10,40))
+
+    for i in range(0,n):
+
+        axes[i][0].imshow(X[i].reshape(size_x,size_y),cmap=plt.get_cmap('gist_gray'))
+        axes[i][0].get_xaxis().set_ticks([])
+        axes[i][0].get_yaxis().set_ticks([])
+
+        axes[i][1].imshow(Y[i].reshape(size_x,size_y),cmap=plt.get_cmap('gist_gray'))
+        axes[i][1].get_xaxis().set_ticks([])
+        axes[i][1].get_yaxis().set_ticks([])
+
+    plt.savefig(os.path.join('data',filename),bbox_inches='tight')
+    plt.close()
+    return True
 
 if __name__== "__main__":
 
@@ -147,15 +164,25 @@ if __name__== "__main__":
 
     X, Y = return_train_test_files(input_path,output_path,size_y,size_x)
 
-    ae = create_autoencoder(size_y,size_x,n_channels=1,h_units=128)
+    Y = (Y>=0.5)*1.0
+
+    ae = create_autoencoder(size_y,size_x,n_channels=1,h_units=32)
+
+    ae.summary()
 
     X_train,X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20)
 
-    es = EarlyStopping(monitor='val_loss', min_delta=1e-5, patience=10, verbose=1)
-    rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, verbose=1)
+    create_plots(X_test, Y_test, n=5, filename='train_imgs_plot.png')
+
+    es = EarlyStopping(monitor='val_loss', min_delta=1e-6, patience=20, verbose=1)
+    rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, verbose=1)
     mcp = ModelCheckpoint(filepath='model_saved.h5',monitor='val_loss',verbose=1,save_best_only=True)
 
     print ("START MODEL FITTING")
     # fits the model on batches with real-time data augmentation:
-    ae.fit(X_train,Y_train,epochs=200, callbacks=[es, rlr,mcp],batch_size = 32,
+    ae.fit(X_train,Y_train,epochs=200, callbacks=[es, rlr,mcp],batch_size = 256,
               validation_data=(X_test,Y_test))
+
+    Y_pred = ae.predict(X_test)
+
+    create_plots(X_test, Y_test, n=5, filename='predicted_imgs_plot.png')
