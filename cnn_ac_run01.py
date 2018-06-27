@@ -34,21 +34,56 @@ def create_autoencoder(size_y=256,size_x=256,n_channels=3,h_units=256):
     x1 = SpatialDropout2D(0.3)(x1)
     x1 = LeakyReLU(alpha=0.2)(x1)
     x1 = BatchNormalization()(x1)
-    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 16x16
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 1024x1024
 
     x1 = GaussianNoise(0.03)(x1)
     x1 = Conv2D(f2, (3, 3), padding='same')(x1)
     x1 = SpatialDropout2D(0.3)(x1)
     x1 = LeakyReLU(alpha=0.2)(x1)
     x1 = BatchNormalization()(x1)
-    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 8x8
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 512x512
 
     x1 = GaussianNoise(0.02)(x1)
     x1 = Conv2D(f3, (3, 3), padding='same')(x1)
     x1 = SpatialDropout2D(0.3)(x1)
     x1 = LeakyReLU(alpha=0.2)(x1)
     x1 = BatchNormalization()(x1)
-    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 4x4
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 256x256
+
+    x1 = GaussianNoise(0.02)(x1)
+    x1 = Conv2D(f3, (3, 3), padding='same')(x1)
+    x1 = SpatialDropout2D(0.3)(x1)
+    x1 = LeakyReLU(alpha=0.2)(x1)
+    x1 = BatchNormalization()(x1)
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 128x128
+
+    x1 = GaussianNoise(0.02)(x1)
+    x1 = Conv2D(f3, (3, 3), padding='same')(x1)
+    x1 = SpatialDropout2D(0.3)(x1)
+    x1 = LeakyReLU(alpha=0.2)(x1)
+    x1 = BatchNormalization()(x1)
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 64x64
+
+    x1 = GaussianNoise(0.02)(x1)
+    x1 = Conv2D(f3, (3, 3), padding='same')(x1)
+    x1 = SpatialDropout2D(0.3)(x1)
+    x1 = LeakyReLU(alpha=0.2)(x1)
+    x1 = BatchNormalization()(x1)
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 32x32
+
+    x1 = GaussianNoise(0.02)(x1)
+    x1 = Conv2D(f3, (3, 3), padding='same')(x1)
+    x1 = SpatialDropout2D(0.3)(x1)
+    x1 = LeakyReLU(alpha=0.2)(x1)
+    x1 = BatchNormalization()(x1)
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 16x16
+
+    x1 = GaussianNoise(0.02)(x1)
+    x1 = Conv2D(f3, (3, 3), padding='same')(x1)
+    x1 = SpatialDropout2D(0.3)(x1)
+    x1 = LeakyReLU(alpha=0.2)(x1)
+    x1 = BatchNormalization()(x1)
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 8x8
 
     x1 = Flatten()(x1)
     x1 = Dropout(0.3)(x1)
@@ -56,27 +91,53 @@ def create_autoencoder(size_y=256,size_x=256,n_channels=3,h_units=256):
     x1 = LeakyReLU(alpha=0.2)(x1)
     encoder = BatchNormalization()(x1)
 
-    dec1 = Dense(units=(size_y / 8) * (size_x / 8) * f4)
+    dec1 = Dense(units=(size_y / 256) * (size_x / 256) * f4)
     dec2 = LeakyReLU(alpha=0.2)
-    dec3 = Reshape((size_x / 8, size_y / 8, f4))
+    dec3 = Reshape((size_x / 256, size_y / 256, f4))
 
     dec4 = UpSampling2D(size=(2, 2))
     dec5 = Conv2D(f5, (3, 3), padding='same')
     dec6 = LeakyReLU(alpha=0.2)
-    dec7 = BatchNormalization()  # 8x8
+    dec7 = BatchNormalization()  # 16x16
 
     dec8 = UpSampling2D(size=(2, 2))
-    dec9 = Conv2D(f6, (3, 3), padding='same')
+    dec9 = Conv2D(f5, (3, 3), padding='same')
     dec10 = LeakyReLU(alpha=0.2)
-    dec11 = BatchNormalization()  # 16x16
+    dec11 = BatchNormalization()  # 32x32
 
     dec12 = UpSampling2D(size=(2, 2))
-    dec13 = Conv2D(f7, (3, 3), padding='same')
+    dec13 = Conv2D(f5, (3, 3), padding='same')
     dec14 = LeakyReLU(alpha=0.2)
-    dec15 = BatchNormalization()  # 32x32
+    dec15 = BatchNormalization()  # 64x64
 
-    dec16 = Conv2D(f8, (3, 3), padding='same')
-    dec17 = LeakyReLU(alpha=0.2)  # 32x32
+    dec16 = UpSampling2D(size=(2, 2))
+    dec17 = Conv2D(f5, (3, 3), padding='same')
+    dec18 = LeakyReLU(alpha=0.2)
+    dec19 = BatchNormalization()  # 128x128
+
+    dec20 = UpSampling2D(size=(2, 2))
+    dec21 = Conv2D(f5, (3, 3), padding='same')
+    dec22 = LeakyReLU(alpha=0.2)
+    dec23 = BatchNormalization()  # 256x256
+
+    dec24 = UpSampling2D(size=(2, 2))
+    dec25 = Conv2D(f5, (3, 3), padding='same')
+    dec26 = LeakyReLU(alpha=0.2)
+    dec27 = BatchNormalization()  # 512x512
+
+
+    dec28 = UpSampling2D(size=(2, 2))
+    dec29 = Conv2D(f6, (3, 3), padding='same')
+    dec30 = LeakyReLU(alpha=0.2)
+    dec31 = BatchNormalization()  # 1024x1024
+
+    dec32 = UpSampling2D(size=(2, 2))
+    dec33 = Conv2D(f7, (3, 3), padding='same')
+    dec34 = LeakyReLU(alpha=0.2)
+    dec35 = BatchNormalization()  # 2048x2048
+
+    dec36 = Conv2D(f8, (3, 3), padding='same')
+    dec37 = LeakyReLU(alpha=0.2)  # 2048x2048
 
     recon = Conv2D(n_channels, (3, 3), activation='sigmoid', padding='same')
 
@@ -97,11 +158,33 @@ def create_autoencoder(size_y=256,size_x=256,n_channels=3,h_units=256):
     ae15 = dec15(ae14)
     ae16 = dec16(ae15)
     ae17 = dec17(ae16)
-    ae18 = recon(ae17)
+    ae18 = dec18(ae17)
+    ae19 = dec19(ae18)
+    ae20 = dec20(ae19)
+    ae21 = dec21(ae20)
+    ae22 = dec22(ae21)
+    ae23 = dec23(ae22)
+    ae24 = dec24(ae23)
+    ae25 = dec25(ae24)
+    ae26 = dec26(ae25)
+    ae27 = dec27(ae26)
+    ae28 = dec28(ae27)
+    ae29 = dec29(ae28)
+    ae30 = dec30(ae29)
+    ae31 = dec31(ae30)
+    ae32 = dec32(ae31)
+    ae33 = dec33(ae32)
+    ae34 = dec34(ae33)
+    ae35 = dec35(ae34)
+    ae36 = dec36(ae35)
+    ae37 = dec37(ae36)
+    ae38 = recon(ae37)
+
+
 
     adam_ae = Adam(lr=1e-3)
 
-    ae = Model(inputs=[inp], outputs=[ae18])
+    ae = Model(inputs=[inp], outputs=[ae38])
 
     ae.compile(optimizer=adam_ae, loss='binary_crossentropy')
 
@@ -159,8 +242,8 @@ if __name__== "__main__":
     input_path = os.path.join('data','Input')
     output_path = os.path.join('data','Output')
 
-    size_x = 256
-    size_y = 256
+    size_x = 2048
+    size_y = 2048
 
     X, Y = return_train_test_files(input_path,output_path,size_y,size_x)
 
