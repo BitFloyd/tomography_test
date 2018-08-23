@@ -1,5 +1,5 @@
 from skimage.io import imread
-from sklearn.feature_extraction.image import extract_patches_2d
+from sklearn.feature_extraction.image import extract_patches
 from skimage.filters import gaussian
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -132,6 +132,34 @@ def create_autoencoder(size_y=128,size_x=128,n_channels=1,h_units=16):
 
     return ae
 
+def extract_image_patches_gs(input_image,patch_shape=(32,32),strides=(2,2)):
+
+    y_pos = 0
+    x_pos = 0
+
+    y_length = input_image.shape[0]
+    x_length = input_image.shape[1]
+
+    strides_y = strides[0]
+    strides_x = strides[1]
+
+    list_patches = []
+
+    while y_pos+patch_shape[0] < y_length:
+
+        x_pos = 0
+
+        while x_pos+patch_shape[1] < x_length:
+
+            patch = input_image[y_pos:y_pos+patch_shape[0],x_pos:x_pos+patch_shape[1]]
+            list_patches.append(patch)
+            x_pos+=strides_x
+
+        y_pos+=strides_y
+
+
+    return list_patches
+
 
 def return_train_test_patches(input_path,output_path,size_y,size_x):
 
@@ -152,13 +180,11 @@ def return_train_test_patches(input_path,output_path,size_y,size_x):
         output_image_i = imread(fname=fname_output)
         output_image_i = gaussian(output_image_i,sigma=0.4)
 
-        input_image_patches = extract_patches_2d(input_image_i,patch_size=(size_y,size_x))
-        output_image_patches = extract_patches_2d(output_image_i,patch_size=(size_y,size_x))
+        input_image_patches = extract_image_patches_gs(input_image_i,patch_shape=(size_y,size_x),strides=(size_y/2,size_x/2))
+        output_image_patches = extract_image_patches_gs(output_image_i,patch_shape=(size_y,size_x),strides=(size_y/2,size_x/2))
 
-        print "HERE"
-
-        list_input_images.extend(input_image_patches.tolist())
-        list_output_images.extend(output_image_patches.tolist())
+        list_input_images.extend(input_image_patches)
+        list_output_images.extend(output_image_patches)
 
 
     message_print("NUM_INP_IMAGE_PATCHES",str(len(list_input_images)))
