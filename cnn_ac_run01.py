@@ -41,17 +41,10 @@ def create_autoencoder(size_y=128,size_x=128,n_channels=1,h_units=16):
     x1 = SpatialDropout2D(0.3)(x1)
     x1 = LeakyReLU(alpha=0.2)(x1)
     x1 = BatchNormalization()(x1)
-    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 128x128
+    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 64x64
 
     x1 = GaussianNoise(0.03)(x1)
     x1 = Conv2D(f2, (3, 3), padding='same')(x1)
-    x1 = SpatialDropout2D(0.3)(x1)
-    x1 = LeakyReLU(alpha=0.2)(x1)
-    x1 = BatchNormalization()(x1)
-    x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 64x64
-
-    x1 = GaussianNoise(0.02)(x1)
-    x1 = Conv2D(f3, (3, 3), padding='same')(x1)
     x1 = SpatialDropout2D(0.3)(x1)
     x1 = LeakyReLU(alpha=0.2)(x1)
     x1 = BatchNormalization()(x1)
@@ -65,11 +58,17 @@ def create_autoencoder(size_y=128,size_x=128,n_channels=1,h_units=16):
     x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 16x16
 
     x1 = GaussianNoise(0.02)(x1)
-    x1 = Conv2D(f4, (3, 3), padding='same')(x1)
+    x1 = Conv2D(f3, (3, 3), padding='same')(x1)
     x1 = SpatialDropout2D(0.3)(x1)
     x1 = LeakyReLU(alpha=0.2)(x1)
     x1 = BatchNormalization()(x1)
     x1 = AveragePooling2D(pool_size=(2, 2))(x1)  # 8x8
+
+    x1 = GaussianNoise(0.02)(x1)
+    x1 = Conv2D(f4, (3, 3), padding='same')(x1)
+    x1 = SpatialDropout2D(0.3)(x1)
+    x1 = LeakyReLU(alpha=0.2)(x1)
+    x1 = BatchNormalization()(x1)                # 8x8
 
     x1 = Flatten()(x1)
     x1 = Dropout(0.3)(x1)
@@ -77,9 +76,9 @@ def create_autoencoder(size_y=128,size_x=128,n_channels=1,h_units=16):
     x1 = LeakyReLU(alpha=0.2)(x1)
     encoder = BatchNormalization()(x1)
 
-    dec1 = Dense(units=(size_y / 32) * (size_x / 32) * f4)
+    dec1 = Dense(units=(size_y / 16) * (size_x / 16) * f4)
     dec2 = LeakyReLU(alpha=0.2)
-    dec3 = Reshape((size_x / 32, size_y / 32, f4))
+    dec3 = Reshape((size_x / 16, size_y / 16, f4))
 
     dec4 = UpSampling2D(size=(2, 2))
     dec5 = Conv2D(f5, (3, 3), padding='same')
@@ -160,7 +159,6 @@ def extract_image_patches_gs(input_image,patch_shape=(32,32),strides=(2,2)):
 
     return list_patches
 
-
 def return_train_test_patches(input_path,output_path,size_y,size_x):
 
     list_input_files = os.listdir(input_path)
@@ -190,7 +188,13 @@ def return_train_test_patches(input_path,output_path,size_y,size_x):
     message_print("NUM_INP_IMAGE_PATCHES",str(len(list_input_images)))
     message_print("NUM_OUTP_IMAGE_PATCHES", str(len(list_output_images)))
 
-    return np.array(list_input_images), np.array(list_output_images)
+    list_input_images = np.array(list_input_images)
+    list_output_images = np.array(list_output_images)
+
+    list_input_images = np.expand_dims(list_input_images,-1)
+    list_output_images = np.expand_dims(list_output_images,-1)
+
+    return list_input_images, list_output_images
 
 def create_plots(X, Y, n=10, filename='plot.png'):
 
@@ -224,7 +228,7 @@ if __name__== "__main__":
 
     ae.summary()
 
-    X_train,X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20)
+    X_train,X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20,shuffle=True)
 
     create_plots(X_test, Y_test, n=20, filename='train_imgs_plot.png')
 
@@ -234,7 +238,7 @@ if __name__== "__main__":
 
     print ("START MODEL FITTING")
     # fits the model on batches with real-time data augmentation:
-    ae.fit(X_train,Y_train,epochs=200, callbacks=[es, rlr,mcp],batch_size = 512, validation_data=(X_test,Y_test),shuffle=True)
+    ae.fit(X_train,Y_train,epochs=200, callbacks=[es, rlr,mcp],batch_size = 128, validation_data=(X_test,Y_test),shuffle=True)
 
     Y_pred = ae.predict(X_test)
 
