@@ -1,3 +1,6 @@
+import matplotlib as mpl
+mpl.use('Agg')
+from skimage import color
 from skimage.io import imread
 from sklearn.feature_extraction.image import extract_patches
 from skimage.filters import gaussian
@@ -198,20 +201,29 @@ def return_train_test_patches(input_path,output_path,size_y,size_x):
 
 def create_plots(X, Y, n=10, filename='plot.png'):
 
-    fig, axes = plt.subplots(n,2,figsize=(10,10))
-
     for i in range(0,n):
+        fig, axes = plt.subplots(1,figsize=(20, 20))
 
-        axes[i][0].imshow(X[i].reshape(size_x,size_y),cmap=plt.get_cmap('gist_gray'))
-        axes[i][0].get_xaxis().set_ticks([])
-        axes[i][0].get_yaxis().set_ticks([])
+        x_img = X[i].reshape(size_y,size_x)
+        x_img = np.dstack([x_img,x_img,x_img])
 
-        axes[i][1].imshow(Y[i].reshape(size_x,size_y),cmap=plt.get_cmap('gist_gray'))
-        axes[i][1].get_xaxis().set_ticks([])
-        axes[i][1].get_yaxis().set_ticks([])
+        color_mask = np.zeros((size_y,size_x,3))
+        color_mask[(Y[i].reshape(size_x,size_y)>0)] = [1,0,0]
 
-    plt.savefig(os.path.join('data',filename),bbox_inches='tight')
-    plt.close()
+        x_img_hsv = color.rgb2hsv(x_img)
+        color_mask_hsv = color.rgb2hsv(color_mask)
+
+        x_img_hsv[..., 0] = color_mask_hsv[..., 0]
+        x_img_hsv[..., 1] = color_mask_hsv[..., 1] * 0.9
+
+        x_img = color.hsv2rgb(x_img_hsv)
+
+        axes.imshow(x_img,interpolation='nearest')
+        axes.get_xaxis().set_ticks([])
+        axes.get_yaxis().set_ticks([])
+        plt.savefig(os.path.join('data','Train',filename+'_'+str(i)+'.png'),bbox_inches='tight')
+        plt.close()
+
     return True
 
 if __name__== "__main__":
@@ -230,16 +242,16 @@ if __name__== "__main__":
 
     X_train,X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20,shuffle=True)
 
-    create_plots(X_test, Y_test, n=20, filename='train_imgs_plot.png')
+    create_plots(X_train, Y_train, n=50, filename='train_imgs_plot')
 
-    es = EarlyStopping(monitor='val_loss', min_delta=1e-6, patience=20, verbose=1)
-    rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, verbose=1)
+    es = EarlyStopping(monitor='val_loss', min_delta=1e-6, patience=2, verbose=1)
+    rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=1, verbose=1)
     mcp = ModelCheckpoint(filepath='model_saved.h5',monitor='val_loss',verbose=1,save_best_only=True)
 
     print ("START MODEL FITTING")
     # fits the model on batches with real-time data augmentation:
-    ae.fit(X_train,Y_train,epochs=200, callbacks=[es, rlr,mcp],batch_size = 128, validation_data=(X_test,Y_test),shuffle=True)
+    ae.fit(X_train,Y_train,epochs=20, callbacks=[es, rlr,mcp],batch_size = 128, validation_data=(X_test,Y_test),shuffle=True)
 
     Y_pred = ae.predict(X_test)
 
-    create_plots(X_test, Y_test, n=20, filename='predicted_imgs_plot.png')
+    create_plots(X_test, Y_test, n=50, filename='predicted_imgs_plot')
