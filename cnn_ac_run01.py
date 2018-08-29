@@ -249,13 +249,13 @@ if __name__== "__main__":
 
     create_plots(X_train, Y_train, n=50, filename='Train/train_imgs_plot')
 
-    es = EarlyStopping(monitor='val_loss', min_delta=1e-6, patience=2, verbose=1)
-    rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=1, verbose=1)
+    es = EarlyStopping(monitor='val_loss', min_delta=1e-6, patience=5, verbose=1)
+    rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
     mcp = ModelCheckpoint(filepath='model_saved.h5',monitor='val_loss',verbose=1,save_best_only=True)
 
     print ("START MODEL FITTING")
     # fits the model on batches with real-time data augmentation:
-    ae.fit(X_train,Y_train,epochs=20, callbacks=[es, rlr,mcp],batch_size = 128, validation_data=(X_test,Y_test),shuffle=True)
+    ae.fit(X_train,Y_train,epochs=50, callbacks=[es, rlr,mcp],batch_size = 128, validation_data=(X_test,Y_test),shuffle=True)
 
     Y_pred = ae.predict(X_test)
 
