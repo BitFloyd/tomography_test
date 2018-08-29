@@ -8,12 +8,13 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.layers import Conv2D,GaussianNoise,SpatialDropout2D,LeakyReLU
 from keras.layers import BatchNormalization,AveragePooling2D,Dense,Flatten
 from keras.layers import Input,Dropout,Reshape,UpSampling2D
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from keras_contrib.losses import DSSIMObjective
 
 from tqdm import tqdm
 import os
@@ -130,7 +131,9 @@ def create_autoencoder(size_y=128,size_x=128,n_channels=1,h_units=16):
 
     ae = Model(inputs=[inp], outputs=[ae20])
 
-    ae.compile(optimizer=adam_ae, loss='binary_crossentropy')
+    dssim = DSSIMObjective(kernel_size=4)
+
+    ae.compile(optimizer=adam_ae, loss=dssim)
 
     return ae
 
@@ -181,8 +184,8 @@ def return_train_test_patches(input_path,output_path,size_y,size_x):
         output_image_i = imread(fname=fname_output)
         output_image_i = gaussian(output_image_i,sigma=0.4)
 
-        input_image_patches = extract_image_patches_gs(input_image_i,patch_shape=(size_y,size_x),strides=(size_y/2,size_x/2))
-        output_image_patches = extract_image_patches_gs(output_image_i,patch_shape=(size_y,size_x),strides=(size_y/2,size_x/2))
+        input_image_patches = extract_image_patches_gs(input_image_i,patch_shape=(size_y,size_x),strides=(size_y/4,size_x/4))
+        output_image_patches = extract_image_patches_gs(output_image_i,patch_shape=(size_y,size_x),strides=(size_y/4,size_x/4))
 
         list_input_images.extend(input_image_patches)
         list_output_images.extend(output_image_patches)
@@ -208,7 +211,7 @@ def create_plots(X, Y, n=10, filename='plot.png'):
         x_img = np.dstack([x_img,x_img,x_img])
 
         color_mask = np.zeros((size_y,size_x,3))
-        color_mask[(Y[i].reshape(size_x,size_y)>0)] = [1,0,0]
+        color_mask[(Y[i].reshape(size_x,size_y)>0.1)] = [1,0,0]
 
         x_img_hsv = color.rgb2hsv(x_img)
         color_mask_hsv = color.rgb2hsv(color_mask)
@@ -221,7 +224,7 @@ def create_plots(X, Y, n=10, filename='plot.png'):
         axes.imshow(x_img,interpolation='nearest')
         axes.get_xaxis().set_ticks([])
         axes.get_yaxis().set_ticks([])
-        plt.savefig(os.path.join('data','Train',filename+'_'+str(i)+'.png'),bbox_inches='tight')
+        plt.savefig(os.path.join('data',filename+'_'+str(i)+'.png'),bbox_inches='tight')
         plt.close()
 
     return True
@@ -240,9 +243,11 @@ if __name__== "__main__":
 
     ae.summary()
 
+    Y = np.float32(Y>0.1)
+
     X_train,X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.20,shuffle=True)
 
-    create_plots(X_train, Y_train, n=50, filename='train_imgs_plot')
+    create_plots(X_train, Y_train, n=50, filename='Train/train_imgs_plot')
 
     es = EarlyStopping(monitor='val_loss', min_delta=1e-6, patience=2, verbose=1)
     rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=1, verbose=1)
@@ -254,4 +259,6 @@ if __name__== "__main__":
 
     Y_pred = ae.predict(X_test)
 
-    create_plots(X_test, Y_test, n=50, filename='predicted_imgs_plot')
+    print np.max(Y_pred)
+
+    create_plots(X_test, Y_pred, n=50, filename='Test/predicted_imgs_plot')
